@@ -18,7 +18,7 @@ A flexible library to create CLIs
 
 ```ts
 
-import { eclipt } from 'https://deno.land/x/eclipt@0.1.0/eclipt.ts';
+import { eclipt } from 'https://deno.land/x/eclipt@0.1.1/eclipt.ts';
 
 eclipt('my-awesome-tool', {
     description: 'My Awesome Tool can do anything you with', // Optional description
@@ -44,6 +44,8 @@ eclipt('my-awesome-tool', {
 ## TODO
 - unquote arguments and values
 - mark multi options some way in the help
+- generalize main function and subcommand
+- maybe rename 'data' to 'opts' for consistency
 
 ## Reporting Bugs
 If you have found any problems with this module, please:
