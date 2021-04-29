@@ -86,7 +86,7 @@ function getErrorMessage(err: CLIParsingError): string{
 }
 
 function getUsageLine(spec: CLICommand): string{
-    let r = '';
+    let r = 'Usage:\n    ';
 
     if(spec.path && spec.path.length > 0)
         r += spec.path.join(' ') + ' ';
@@ -102,7 +102,24 @@ function getUsageLine(spec: CLICommand): string{
     if(spec.action && spec.args)
         r += ' ' + spec.args.map(a => '<' + a + '>').join(' ');
 
-    return r;
+    return r + '\n\n';
+}
+
+function getCommandsHelp(spec: CLICommand): string {
+    let r = 'Commands:\n';
+
+    let size = 0;
+    for(const name in spec.commands){
+        const cmd = spec.commands[name];
+        cmd.name = name;
+        size = Math.max(name.length, size);
+    }
+
+    for(const name in spec.commands)
+        r += '    ' + name.padEnd(size, ' ') + '    ' +
+            (spec.commands[name].description ?? '') + '\n';
+
+    return r + '\n';
 }
 
 function getHelp(spec: CLICommand): string{
@@ -111,7 +128,7 @@ function getHelp(spec: CLICommand): string{
     if(spec.description)
         r += spec.description + '\n\n'
 
-    r += 'Usage:\n    ' + getUsageLine(spec) + '\n\n';
+    r += getUsageLine(spec);
 
     if(spec.opts){
         r += 'Options:\n';
@@ -134,28 +151,10 @@ function getHelp(spec: CLICommand): string{
         r += '\n';
     }
 
-    if(spec.commands){
-        r += 'Commands:\n';
-
-        let size = 0;
-        for(const name in spec.commands){
-            const cmd = spec.commands[name];
-            cmd.name = name;
-            size = Math.max(name.length, size);
-        }
-
-        for(const name in spec.commands)
-            r += '    ' + name.padEnd(size, ' ') + '    ' +
-                (spec.commands[name].description ?? '') + '\n';
-
-        r += '\n';
-    }
+    if(spec.commands)
+        r += getCommandsHelp(spec);
 
     return r;
-}
-
-function getShortHelp(spec: CLICommand): string{
-    return '\nUsage:\n\t' + getUsageLine(spec) + '\n\nFor more information try --help\n';
 }
 
 function parseOption({ input, spec, tokens }: CLIParsingFrame){
@@ -314,7 +313,13 @@ export function eclipt(name: string, spec: CLICommand, tokens?: string[]){
     }
     catch(err){
         err.output = '\n\u001b[38;5;203m' + getErrorMessage(err) +
-            '\u001b[0m\n' + getShortHelp(err.spec);
+            '\u001b[0m\n\n' + getUsageLine(err.spec);
+
+        if(err.type == 'unknown-command' || err.type == 'no-action')
+            err.output += getCommandsHelp(err.spec);
+
+        err.output += 'For more information try --help\n';
+
         err.error = true;
 
         if(stdout)
