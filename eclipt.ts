@@ -100,7 +100,7 @@ function getUsageLine(spec: CLICommand): string{
         r += ' COMMAND';
 
     if(spec.action && spec.args)
-        r += ' ' + spec.args.map(a => '<' + a + '>');
+        r += ' ' + spec.args.map(a => '<' + a + '>').join(' ');
 
     return r;
 }
