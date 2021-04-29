@@ -18,7 +18,7 @@ Deno.test('fail when missing action', () => {
 });
 
 Deno.test('fail when repeating option', () => {
-    const err = eclipt('my-tool', { opts: { pa: { type: 0, alias: 'p' } } },
+    const err = eclipt('my-tool', { opts: { pa: { flag: true, alias: 'p' } } },
         [ '-p', '-p' ]
     );
 
@@ -35,7 +35,7 @@ Deno.test('parse all as arguments after argument modifier', () => {
 
 Deno.test('parse option', () => {
     const out = eclipt('my-tool', { action: i => i, opts: {
-        op1: { type: 1 }
+        op1: { }
     } },
         [ '--op1', 'foobar' ]
     );
@@ -45,7 +45,7 @@ Deno.test('parse option', () => {
 
 Deno.test('parse assigned option', () => {
     const out = eclipt('my-tool', { action: i => i, opts: {
-        op1: { type: 1 }
+        op1: { }
     } },
         [ '--op1=foobar' ]
     );
@@ -54,21 +54,21 @@ Deno.test('parse assigned option', () => {
 });
 
 Deno.test('fail when given option is not specified', () => {
-    const err = eclipt('my-tool', { opts: { foo: { type: 0 } } },
+    const err = eclipt('my-tool', { opts: { foo: { flag: true } } },
         [ '--bar', 'arg' ]);
     assertEquals(err.type, 'unknown-opt');
     assertEquals(err.badOpt, 'bar');
 });
 
 Deno.test('fail when option value is not provided', () => {
-    const err = eclipt('my-tool', { opts: { foo: { type: 1 } } },
+    const err = eclipt('my-tool', { opts: { foo: { } } },
         [ '--foo' ]);
     assertEquals(err.type, 'missing-val');
     assertEquals(err.opt.name, 'foo');
 });
 
 Deno.test('fail when sending assigned value to flag option', () => {
-    const err = eclipt('my-tool', { action: i => i, opts: { foo: { type: 0 } } },
+    const err = eclipt('my-tool', { action: i => i, opts: { foo: { flag: true } } },
         [ '--foo=a' ]);
     assertEquals(err.type, 'flag-val');
 });
@@ -84,7 +84,7 @@ Deno.test('fail unknown alias', () => {
 
 Deno.test('parse aliased options', () => {
     const out = eclipt('my-tool',
-        { action: i => i, opts: { foo: { type: 1, value: 'thing', alias: 'o' } } },
+        { action: i => i, opts: { foo: { value: 'thing', alias: 'o' } } },
         [ '-o', 'arg1', 'arg2' ]);
 
     assertEquals(out.data['foo'], 'arg1');
@@ -94,8 +94,8 @@ Deno.test('parse aliased options', () => {
 Deno.test('parse grouped aliased options', () => {
     const out = eclipt('my-tool',
         { action: i => i, opts: {
-            opt1: { type: 0, alias: 'o' },
-            opt2: { type: 0, alias: 'f' }
+            opt1: { flag: true, alias: 'o' },
+            opt2: { flag: true, alias: 'f' }
         } },
         [ '-of', 'arg2' ]);
 
@@ -107,7 +107,7 @@ Deno.test('parse grouped aliased options', () => {
 Deno.test('parse array options', () => {
     const out = eclipt('my-tool',
         { action: i => i, opts: {
-            opt1: { type: 2, value: 'thing', alias: 'o' }
+            opt1: { multi: true, value: 'thing', alias: 'o' }
         } },
         [ '-o', '1', '-o', '2', '-o', '3', 'arg2' ]);
 
@@ -142,8 +142,8 @@ Deno.test('help option', () => {
     const out = eclipt('my-tool', {
         description: 'Test description',
         opts: {
-            opt1: { type: 0 },
-            opt2: { type: 0, alias: 'f' }
+            opt1: { flag: true },
+            opt2: { flag: true, alias: 'f' }
         },
         commands: { doit: { action: i => i } }
     }, [ '--help' ]);
@@ -159,8 +159,8 @@ Deno.test('help alias', () => {
             foo: {
                 description: 'Test description',
                 opts: {
-                    opt1: { type: 0 },
-                    opt2: { type: 0, alias: 'f' }
+                    opt1: { flag: true },
+                    opt2: { flag: true, alias: 'f' }
                 }
             }
         }

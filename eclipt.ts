@@ -8,12 +8,11 @@ export type CLIInput = {
 
 type CLIAction = (input: CLIInput) => void;
 
-enum CLIOptType { Flag, Single, Multi }
-
 type CLIOpt = {
     name?: string,
     alias?: string,
-    type: CLIOptType,
+    flag?: boolean,
+    multi?: boolean,
     value?: string,
     description?: string,
     disableHelp?: boolean
@@ -74,7 +73,7 @@ function getOptDef(opt?: CLIOpt){
     opt = opt as CLIOpt;
     let r = (opt.alias ? '-' + opt.alias + ', ' : '') + '--' + opt.name;
 
-    if(opt.type == CLIOptType.Single){
+    if(!opt.flag){
         opt.value = opt.value ?? 'value'
         r += ' <' + opt.value + '>';
     }
@@ -171,15 +170,13 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
     const optSpec = spec.opts[opt];
     optSpec.name = opt;
 
-    const isMulti = optSpec.type == CLIOptType.Multi;
-
-    if(!isMulti && opt in input.data)
+    if(!optSpec.multi && opt in input.data)
         throw { type: 'not-multi', opt: optSpec, spec };
 
-    if(typeof val == 'string' && optSpec.type == CLIOptType.Flag)
+    if(typeof val == 'string' && optSpec.flag)
         throw { type: 'flag-val', opt: optSpec, spec };
 
-    if(optSpec.type == CLIOptType.Flag){
+    if(optSpec.flag){
         input.data[opt] = true;
         return;
     }
@@ -190,9 +187,9 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
         val = tokens.shift();
     }
 
-    if(isMulti && opt in input.data)
+    if(optSpec.multi && opt in input.data)
         (input.data[opt] as string[]).push(val as string);
-    else if(isMulti)
+    else if(optSpec.multi)
         input.data[opt] = [ val as string ];
     else
         input.data[opt] = val as string;
