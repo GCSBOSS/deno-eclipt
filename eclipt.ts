@@ -28,7 +28,7 @@ type CLICommand = {
     args?: string[],
     path?: string[],
     name?: string,
-    opts: CLIOptList
+    opts?: CLIOptList
 }
 
 type CLIParsingFrame = {
@@ -164,10 +164,10 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
     if(opt.indexOf('=') > -1)
         [ opt, val ] = opt.split(/=/);
 
-    if(!(opt in spec.opts))
+    if(!(opt in (spec.opts as CLIOptList)))
         throw { type: 'unknown-opt', badOpt: opt, spec };
 
-    const optSpec = spec.opts[opt];
+    const optSpec = spec.opts![opt];
     optSpec.name = opt;
 
     if(!optSpec.multi && opt in input.data)
@@ -305,6 +305,7 @@ export function eclipt(name: string, spec: CLICommand, tokens?: string[]){
 
     const globalFrame = { input: { name, data: {}, args: [] }, tokens, spec,
         output: null, stdout, global: {} };
+    globalFrame.spec.opts = globalFrame.spec.opts || {};
     globalFrame.spec.name = name;
     globalFrame.global = globalFrame as unknown as CLIGlobalParsingFrame;
 
