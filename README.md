@@ -20,8 +20,7 @@ A flexible library to create CLIs
 
 import { eclipt } from 'https://deno.land/x/eclipt@0.1.0/eclipt.ts';
 
-eclipt({
-    name: 'my-awesome-tool', // command name
+eclipt('my-awesome-tool', {
     description: 'My Awesome Tool can do anything you with', // Optional description
     action: input => // optional action for the command
         console.log('You have run: %s with following input', input.name, input),
@@ -36,7 +35,7 @@ eclipt({
         opt2: { description: 'Does that' } // Optional description
     },
     commands: {
-        'command-name': { /* (name, description?, action?, args?, opts? commands?) */ }
+        'command-name': { /* (description?, action?, args?, opts? commands?) */ }
     }
 });
 
