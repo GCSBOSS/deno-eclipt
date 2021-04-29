@@ -22,7 +22,6 @@ lint-deno:
  tags:
    - docker
  script:
-   - cd deno
    - deno lint --unstable
 
 test-deno:
@@ -32,6 +31,5 @@ test-deno:
   tags:
     - docker
   script:
-    - cd deno
     - deno test --coverage=coverage --unstable
     - deno coverage --unstable coverage
