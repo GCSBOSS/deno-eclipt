@@ -299,6 +299,6 @@ function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?:
 }
 
 export function eclipt(name: string, spec: CLICommand, tokens?: string[]): unknown{
-    tokens = tokens ?? Deno.args;
+    tokens = tokens ?? [ ...Deno.args ];
     return parseCommand(name, spec, tokens);
 }
