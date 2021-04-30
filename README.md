@@ -18,7 +18,7 @@ A flexible library to create CLIs
 
 ```ts
 
-import { eclipt } from 'https://deno.land/x/eclipt@0.1.1/eclipt.ts';
+import { eclipt } from 'https://deno.land/x/eclipt@0.2.1/eclipt.ts';
 
 eclipt('my-awesome-tool', {
     description: 'My Awesome Tool can do anything you with', // Optional description
