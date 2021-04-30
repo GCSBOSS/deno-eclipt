@@ -75,8 +75,8 @@ function getErrorMessage(err: CLIParsingError): string{
 function getUsageLine(spec: CLICommand): string{
     let r = 'Usage:\n    ';
 
-    if(spec.path && spec.path.length > 0)
-        r += spec.path.join(' ') + ' ';
+    if(spec.path!.length > 0)
+        r += spec.path!.join(' ') + ' ';
 
     r += spec.name;
 
@@ -244,7 +244,9 @@ function parseUnknown(frame: CLIParsingFrame): unknown{
 
     if(t && frame.spec.commands && t in frame.spec.commands){
         const name = frame.tokens.shift() as string;
-        return parseCommand(name, frame.spec.commands![name], frame.tokens, frame.input);
+        const newSpec = frame.spec.commands![name];
+        newSpec.path = frame.spec.path!.concat(frame.spec.name as string);
+        return parseCommand(name, newSpec, frame.tokens, frame.input);
     }
 
     if(t && frame.spec.commands && !frame.spec.action)
@@ -269,8 +271,6 @@ function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?:
 
     // TODO validate repeated aliases
 
-    frame.spec.path = frame.spec.path ?? [];
-    frame.spec.path.push(spec.name as string);
     frame.spec.name = name;
 
     try{
@@ -303,5 +303,6 @@ function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?:
 
 export function eclipt(name: string, spec: CLICommand, tokens?: string[]): unknown{
     tokens = tokens ?? [ ...Deno.args ];
+    spec.path = [];
     return parseCommand(name, spec, tokens);
 }
