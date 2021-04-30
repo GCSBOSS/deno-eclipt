@@ -1,6 +1,8 @@
 import { assertEquals, assert } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { eclipt } from "./eclipt.ts";
 
+Deno.env.set('ENV', 'testing');
+
 Deno.test('parse arguments', () => {
     const out = eclipt('my-tool', { action: i => i },
         [ 'not-cmd' ]
@@ -11,7 +13,7 @@ Deno.test('parse arguments', () => {
 
 Deno.test('fail when missing action', () => {
     const err = eclipt('my-tool', {  },
-        [ 'not-cmd' ]
+        [ ]
     );
 
     assertEquals(err.type, 'no-action');
@@ -57,7 +59,7 @@ Deno.test('fail when given option is not specified', () => {
     const err = eclipt('my-tool', { opts: { foo: { flag: true } } },
         [ '--bar', 'arg' ]);
     assertEquals(err.type, 'unknown-opt');
-    assertEquals(err.badOpt, 'bar');
+    assertEquals(err.token, 'bar');
 });
 
 Deno.test('fail when option value is not provided', () => {
@@ -79,7 +81,7 @@ Deno.test('fail unknown alias', () => {
         [ '-o', 'arg1', 'arg2' ]);
 
     assertEquals(err.type, 'unknown-alias');
-    assertEquals(err.alias, 'o');
+    assertEquals(err.token, 'o');
 });
 
 Deno.test('parse aliased options', () => {
@@ -148,9 +150,9 @@ Deno.test('help option', () => {
         commands: { doit: { action: i => i } }
     }, [ '--help' ]);
 
-    assert(/Usage\:/.test(out));
-    assert(/Options\:/.test(out));
-    assert(/Commands\:/.test(out));
+    assert(/Usage\:/.test(out.output));
+    assert(/Options\:/.test(out.output));
+    assert(/Commands\:/.test(out.output));
 });
 
 Deno.test('help alias', () => {
@@ -166,10 +168,10 @@ Deno.test('help alias', () => {
         }
     }, [ 'foo', '-h' ]);
 
-    assert(/Test\ /.test(out));
-    assert(/Usage\:/.test(out));
-    assert(/Options\:/.test(out));
-    assert(!/Commands\:/.test(out));
+    assert(/Test\ /.test(out.output));
+    assert(/Usage\:/.test(out.output));
+    assert(/Options\:/.test(out.output));
+    assert(!/Commands\:/.test(out.output));
 });
 
 Deno.test('read ARGV when no args array is supplied', () => {

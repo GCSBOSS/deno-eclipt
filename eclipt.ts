@@ -34,38 +34,25 @@ type CLICommand = {
 type CLIParsingFrame = {
     tokens: string[],
     input: CLIInput,
-    spec: CLICommand,
-    global: CLIGlobalParsingFrame,
-}
-
-type CLIGlobalParsingFrame = {
-    tokens: string[],
-    input: CLIInput,
-    spec: CLICommand,
-    global: CLIGlobalParsingFrame,
-    output: unknown,
-    stdout: boolean
+    spec: CLICommand
 }
 
 type CLIParsingError = {
     type: string,
-    alias?: string,
-    command?: string,
-    val?: string,
+    token?: string,
+    args?: string[],
     opt?: CLIOpt,
-    count?: number,
-    spec: CLICommand,
-    badOpt?: string
+    count?: number
 }
 
 const ERROR_MESSAGES: Record<string, (err: CLIParsingError) => string> = {
-    'unknown-opt': err => `Option --${err.badOpt} does not exist in this context`,
+    'unknown-opt': err => `Option --${err.token} does not exist in this context`,
     'not-multi': err => `Option ${getOptDef(err.opt)} cannot be set more than once`,
     'flag-val': err => `Option ${getOptDef(err.opt)} cannot be assigned a value`,
     'missing-val': err => `Option ${getOptDef(err.opt)} requires a value but none was supplied`,
-    'unknown-alias': err => `Option -${err.alias} does not exist in this context`,
-    'bad-args': err => `Required ${err.spec.args?.length} arguments but ${err.count} were supplied`,
-    'unknown-command': err => `Command '${err.command}' does not exist in this context`,
+    'unknown-alias': err => `Option -${err.token} does not exist in this context`,
+    'bad-args': err => `Required ${err.args?.length} arguments but ${err.count} were supplied`,
+    'unknown-command': err => `Command '${err.token}' does not exist in this context`,
     'no-action': () => `You must choose one of the available commands`
 }
 
@@ -164,7 +151,7 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
         [ opt, val ] = opt.split(/=/);
 
     if(!(opt in (spec.opts as CLIOptList)))
-        throw { type: 'unknown-opt', badOpt: opt, spec };
+        throw { type: 'unknown-opt', token: opt, spec };
 
     const optSpec = spec.opts![opt];
     optSpec.name = opt;
@@ -212,7 +199,7 @@ function parseAlias({ tokens, spec }: CLIParsingFrame){
         }
     }
 
-    throw { type: 'unknown-alias', alias, spec };
+    throw { type: 'unknown-alias', token: alias, spec };
 }
 
 function parseArgs({ input, spec, tokens }: CLIParsingFrame){
@@ -223,7 +210,7 @@ function parseArgs({ input, spec, tokens }: CLIParsingFrame){
     }
 
     if(spec.args && spec.args.length != count)
-        throw { type: 'bad-args', count, spec };
+        throw { type: 'bad-args', count, args: spec.args };
 }
 
 function parseGroup({ tokens }: CLIParsingFrame){
@@ -234,34 +221,12 @@ function parseGroup({ tokens }: CLIParsingFrame){
         tokens.unshift('-' + o);
 }
 
-function parseCommand(frame: CLIParsingFrame): void{
-
-    const name = frame.tokens.shift() as string;
-
-    const newFrame = {
-        input: { name, data: {}, args: [], parent: frame.input },
-        tokens: frame.tokens,
-        spec: frame.spec.commands![name],
-        global: frame.global
-    };
-
-    newFrame.spec.path = newFrame.spec.path ?? [];
-    newFrame.spec.path.push(frame.spec.name as string);
-    newFrame.spec.name = name;
-
-    parseUnknown(newFrame);
-}
-
-function parseUnknown(frame: CLIParsingFrame): void{
+function parseUnknown(frame: CLIParsingFrame): unknown{
 
     const t = frame.tokens[0];
 
-    if(t == '--help'){
-        frame.global.output = getHelp(frame.spec);
-        if(frame.global.stdout)
-            console.log(frame.global.output);
-        return;
-    }
+    if(t == '--help')
+        throw { type: 'help', output: getHelp(frame.spec) };
 
     if(t && t.substr(0, 2) != '--' && t.charAt(0) == '-'){
 
@@ -277,11 +242,13 @@ function parseUnknown(frame: CLIParsingFrame): void{
         return parseUnknown(frame);
     }
 
-    if(t && frame.spec.commands && t in frame.spec.commands)
-        return parseCommand(frame);
+    if(t && frame.spec.commands && t in frame.spec.commands){
+        const name = frame.tokens.shift() as string;
+        return parseCommand(name, frame.spec.commands![name], frame.tokens, frame.input);
+    }
 
     if(t && frame.spec.commands && !frame.spec.action)
-        throw { type: 'unknown-command', command: t, spec: frame.spec };
+        throw { type: 'unknown-command', token: t, spec: frame.spec };
 
     if(t == '--')
         frame.tokens.shift();
@@ -291,41 +258,49 @@ function parseUnknown(frame: CLIParsingFrame): void{
 
     parseArgs(frame);
 
-    frame.global.output = frame.spec.action(frame.input);
+    return frame.spec.action(frame.input);
 }
 
-export function eclipt(name: string, spec: CLICommand, tokens?: string[]){
-    const stdout = !tokens;
-    tokens = tokens ?? Deno.args;
+function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?: CLIInput): unknown{
+
+    const frame = {
+        input: { name, data: {}, args: [], parent }, tokens, spec
+    };
 
     // TODO validate repeated aliases
     // TODO validate args is array
     // TODO validate opts is object
 
-    const globalFrame = { input: { name, data: {}, args: [] }, tokens, spec,
-        output: null, stdout, global: {} };
-    globalFrame.spec.opts = globalFrame.spec.opts || {};
-    globalFrame.spec.name = name;
-    globalFrame.global = globalFrame as unknown as CLIGlobalParsingFrame;
+    frame.spec.path = frame.spec.path ?? [];
+    frame.spec.path.push(spec.name as string);
+    frame.spec.name = name;
 
     try{
-        parseUnknown(globalFrame as unknown as CLIGlobalParsingFrame);
+        return parseUnknown(frame);
     }
     catch(err){
-        err.output = '\n\u001b[38;5;203m' + getErrorMessage(err) +
-            '\u001b[0m\n\n' + getUsageLine(err.spec);
 
-        if(err.type == 'unknown-command' || err.type == 'no-action')
-            err.output += getCommandsHelp(err.spec);
+        if(!err.output){
 
-        err.output += 'For more information try --help\n';
+            err.output = '\n\u001b[38;5;203m' + getErrorMessage(err) +
+                '\u001b[0m\n\n' + getUsageLine(frame.spec);
 
-        err.error = true;
+            if(err.type == 'unknown-command' || err.type == 'no-action')
+                err.output += getCommandsHelp(frame.spec);
 
-        if(stdout)
+            err.output += 'For more information try --help\n';
+        }
+
+        if(err.type != 'help')
+            err.error = true;
+
+        if(Deno.env.get('ENV') != 'testing')
             console.log(err.output);
         return err;
     }
+}
 
-    return globalFrame.output;
+export function eclipt(name: string, spec: CLICommand, tokens?: string[]): unknown{
+    tokens = tokens ?? Deno.args;
+    return parseCommand(name, spec, tokens);
 }
