@@ -16,7 +16,7 @@ Deno.test('fail when missing action', () => {
         [ ]
     );
 
-    assertEquals(err.type, 'no-action');
+    assertEquals(err.kind, 'no-action');
 });
 
 Deno.test('fail when repeating option', () => {
@@ -24,7 +24,7 @@ Deno.test('fail when repeating option', () => {
         [ '-p', '-p' ]
     );
 
-    assertEquals(err.type, 'not-multi');
+    assertEquals(err.kind, 'not-multi');
 });
 
 Deno.test('parse all as arguments after argument modifier', () => {
@@ -58,21 +58,21 @@ Deno.test('parse assigned option', () => {
 Deno.test('fail when given option is not specified', () => {
     const err = eclipt('my-tool', { opts: { foo: { flag: true } } },
         [ '--bar', 'arg' ]);
-    assertEquals(err.type, 'unknown-opt');
+    assertEquals(err.kind, 'unknown-opt');
     assertEquals(err.token, 'bar');
 });
 
 Deno.test('fail when option value is not provided', () => {
     const err = eclipt('my-tool', { opts: { foo: { } } },
         [ '--foo' ]);
-    assertEquals(err.type, 'missing-val');
+    assertEquals(err.kind, 'missing-val');
     assertEquals(err.opt.name, 'foo');
 });
 
 Deno.test('fail when sending assigned value to flag option', () => {
     const err = eclipt('my-tool', { action: i => i, opts: { foo: { flag: true } } },
         [ '--foo=a' ]);
-    assertEquals(err.type, 'flag-val');
+    assertEquals(err.kind, 'flag-val');
 });
 
 Deno.test('fail unknown alias', () => {
@@ -80,7 +80,7 @@ Deno.test('fail unknown alias', () => {
         { action: i => i, opts: {} },
         [ '-o', 'arg1', 'arg2' ]);
 
-    assertEquals(err.type, 'unknown-alias');
+    assertEquals(err.kind, 'unknown-alias');
     assertEquals(err.token, 'o');
 });
 
@@ -120,7 +120,7 @@ Deno.test('parse array options', () => {
 Deno.test('fail when not meeting args spec', () => {
     const err = eclipt('my-tool', { action: i => i, args: [ 'hu' ] },
         [ 'foo', 'bar', 'baz', 'arg' ]);
-    assertEquals(err.type, 'bad-args');
+    assertEquals(err.kind, 'bad-args');
 });
 
 Deno.test('parse a specified command', () => {
@@ -137,7 +137,7 @@ Deno.test('fail when given command doesn\'t exist', () => {
         commands: { doit: { action: i => i } }
     }, [ 'not-cmd' ]);
 
-    assertEquals(err.type, 'unknown-command');
+    assertEquals(err.kind, 'unknown-command');
 });
 
 Deno.test('help option', () => {
@@ -176,5 +176,5 @@ Deno.test('help alias', () => {
 
 Deno.test('read ARGV when no args array is supplied', () => {
     const err = eclipt('my-tool', {});
-    assertEquals(err.type, 'no-action');
+    assertEquals(err.kind, 'no-action');
 });

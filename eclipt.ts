@@ -38,7 +38,7 @@ type CLIParsingFrame = {
 }
 
 type CLIParsingError = {
-    type: string,
+    kind: string,
     token?: string,
     args?: string[],
     opt?: CLIOpt,
@@ -69,7 +69,7 @@ function getOptDef(opt?: CLIOpt){
 }
 
 function getErrorMessage(err: CLIParsingError): string{
-    return ERROR_MESSAGES[err.type](err) as string;
+    return ERROR_MESSAGES[err.kind](err) as string;
 }
 
 function getUsageLine(spec: CLICommand): string{
@@ -151,16 +151,16 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
         [ opt, val ] = opt.split(/=/);
 
     if(!(opt in (spec.opts as CLIOptList)))
-        throw { type: 'unknown-opt', token: opt, spec };
+        throw { kind: 'unknown-opt', token: opt, spec };
 
     const optSpec = spec.opts![opt];
     optSpec.name = opt;
 
     if(!optSpec.multi && opt in input.opts)
-        throw { type: 'not-multi', opt: optSpec, spec };
+        throw { kind: 'not-multi', opt: optSpec, spec };
 
     if(typeof val == 'string' && optSpec.flag)
-        throw { type: 'flag-val', opt: optSpec, spec };
+        throw { kind: 'flag-val', opt: optSpec, spec };
 
     if(optSpec.flag){
         input.opts[opt] = true;
@@ -169,7 +169,7 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
 
     if(typeof val != 'string'){
         if(!tokens[0] || tokens[0].charAt(0) == '-')
-            throw { type: 'missing-val', opt: optSpec, spec };
+            throw { kind: 'missing-val', opt: optSpec, spec };
         val = tokens.shift();
     }
 
@@ -199,7 +199,7 @@ function parseAlias({ tokens, spec }: CLIParsingFrame){
         }
     }
 
-    throw { type: 'unknown-alias', token: alias, spec };
+    throw { kind: 'unknown-alias', token: alias, spec };
 }
 
 function parseArgs({ input, spec, tokens }: CLIParsingFrame){
@@ -210,7 +210,7 @@ function parseArgs({ input, spec, tokens }: CLIParsingFrame){
     }
 
     if(spec.args && spec.args.length != count)
-        throw { type: 'bad-args', count, args: spec.args };
+        throw { kind: 'bad-args', count, args: spec.args };
 }
 
 function parseGroup({ tokens }: CLIParsingFrame){
@@ -226,7 +226,7 @@ function parseUnknown(frame: CLIParsingFrame): unknown{
     const t = frame.tokens[0];
 
     if(t == '--help')
-        throw { type: 'help', output: getHelp(frame.spec) };
+        throw { kind: 'help', output: getHelp(frame.spec) };
 
     if(t && t.substr(0, 2) != '--' && t.charAt(0) == '-'){
 
@@ -248,13 +248,13 @@ function parseUnknown(frame: CLIParsingFrame): unknown{
     }
 
     if(t && frame.spec.commands && !frame.spec.action)
-        throw { type: 'unknown-command', token: t, spec: frame.spec };
+        throw { kind: 'unknown-command', token: t, spec: frame.spec };
 
     if(t == '--')
         frame.tokens.shift();
 
     if(!frame.spec.action)
-        throw { type: 'no-action', spec: frame.spec };
+        throw { kind: 'no-action', spec: frame.spec };
 
     parseArgs(frame);
 
@@ -278,18 +278,21 @@ function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?:
     }
     catch(err){
 
+        if(!err.kind)
+            throw err;
+
         if(!err.output){
 
             err.output = '\n\u001b[38;5;203m' + getErrorMessage(err) +
                 '\u001b[0m\n\n' + getUsageLine(frame.spec);
 
-            if(err.type == 'unknown-command' || err.type == 'no-action')
+            if(err.kind == 'unknown-command' || err.kind == 'no-action')
                 err.output += getCommandsHelp(frame.spec);
 
             err.output += 'For more information try --help\n';
         }
 
-        if(err.type != 'help')
+        if(err.kind != 'help')
             err.error = true;
 
         if(Deno.env.get('ENV') != 'testing')
