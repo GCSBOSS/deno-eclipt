@@ -42,7 +42,7 @@ Deno.test('parse option', () => {
         [ '--op1', 'foobar' ]
     );
 
-    assertEquals(out.data.op1, 'foobar');
+    assertEquals(out.opts.op1, 'foobar');
 });
 
 Deno.test('parse assigned option', () => {
@@ -52,7 +52,7 @@ Deno.test('parse assigned option', () => {
         [ '--op1=foobar' ]
     );
 
-    assertEquals(out.data.op1, 'foobar');
+    assertEquals(out.opts.op1, 'foobar');
 });
 
 Deno.test('fail when given option is not specified', () => {
@@ -89,7 +89,7 @@ Deno.test('parse aliased options', () => {
         { action: i => i, opts: { foo: { value: 'thing', alias: 'o' } } },
         [ '-o', 'arg1', 'arg2' ]);
 
-    assertEquals(out.data['foo'], 'arg1');
+    assertEquals(out.opts['foo'], 'arg1');
     assertEquals(out.args[0], 'arg2');
 });
 
@@ -101,8 +101,8 @@ Deno.test('parse grouped aliased options', () => {
         } },
         [ '-of', 'arg2' ]);
 
-    assertEquals(out.data.opt1, true);
-    assertEquals(out.data.opt2, true);
+    assertEquals(out.opts.opt1, true);
+    assertEquals(out.opts.opt2, true);
     assertEquals(out.args[0], 'arg2');
 });
 
@@ -113,7 +113,7 @@ Deno.test('parse array options', () => {
         } },
         [ '-o', '1', '-o', '2', '-o', '3', 'arg2' ]);
 
-    assertEquals(out.data.opt1.length, 3);
+    assertEquals(out.opts.opt1.length, 3);
     assertEquals(out.args[0], 'arg2');
 });
 

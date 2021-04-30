@@ -1,12 +1,12 @@
 
 export type CLIInput = {
     args: string[],
-    data: Record<string, string | boolean | string[]>,
+    opts: Record<string, string | boolean | string[]>,
     parent?: CLIInput,
     name: string
-};
+}
 
-type CLIAction = (input: CLIInput) => void;
+type CLIAction = (input: CLIInput) => unknown;
 
 type CLIOpt = {
     name?: string,
@@ -156,14 +156,14 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
     const optSpec = spec.opts![opt];
     optSpec.name = opt;
 
-    if(!optSpec.multi && opt in input.data)
+    if(!optSpec.multi && opt in input.opts)
         throw { type: 'not-multi', opt: optSpec, spec };
 
     if(typeof val == 'string' && optSpec.flag)
         throw { type: 'flag-val', opt: optSpec, spec };
 
     if(optSpec.flag){
-        input.data[opt] = true;
+        input.opts[opt] = true;
         return;
     }
 
@@ -173,12 +173,12 @@ function parseOption({ input, spec, tokens }: CLIParsingFrame){
         val = tokens.shift();
     }
 
-    if(optSpec.multi && opt in input.data)
-        (input.data[opt] as string[]).push(val as string);
+    if(optSpec.multi && opt in input.opts)
+        (input.opts[opt] as string[]).push(val as string);
     else if(optSpec.multi)
-        input.data[opt] = [ val as string ];
+        input.opts[opt] = [ val as string ];
     else
-        input.data[opt] = val as string;
+        input.opts[opt] = val as string;
 }
 
 function parseAlias({ tokens, spec }: CLIParsingFrame){
@@ -264,12 +264,10 @@ function parseUnknown(frame: CLIParsingFrame): unknown{
 function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?: CLIInput): unknown{
 
     const frame = {
-        input: { name, data: {}, args: [], parent }, tokens, spec
+        input: { name, opts: {}, args: [], parent }, tokens, spec
     };
 
     // TODO validate repeated aliases
-    // TODO validate args is array
-    // TODO validate opts is object
 
     frame.spec.path = frame.spec.path ?? [];
     frame.spec.path.push(spec.name as string);

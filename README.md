@@ -44,8 +44,7 @@ eclipt('my-awesome-tool', {
 ## TODO
 - unquote arguments and values
 - mark multi options some way in the help
-- generalize main function and subcommand
-- maybe rename 'data' to 'opts' for consistency
+- validate against repeated aliases
 
 ## Reporting Bugs
 If you have found any problems with this module, please:
