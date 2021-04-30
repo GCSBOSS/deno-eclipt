@@ -31,5 +31,5 @@ test-deno:
   tags:
     - docker
   script:
-    - deno test --coverage=coverage --unstable
+    - deno test --coverage=coverage --unstable --allow-env
     - deno coverage --unstable coverage
