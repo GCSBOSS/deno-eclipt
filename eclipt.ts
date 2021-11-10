@@ -80,7 +80,7 @@ function getUsageLine(spec: CLICommand): string{
 
     r += spec.name;
 
-    if(spec.opts)
+    if(typeof spec.opts == 'object' && Object.keys(spec.opts).length > 0)
         r += ' [OPTIONS]';
 
     if(!spec.action)
@@ -270,7 +270,8 @@ function parseCommand(name: string, spec: CLICommand, tokens: string[], parent?:
     };
 
     // TODO validate repeated aliases
-
+    frame.spec.opts = frame.spec.opts || {};
+    frame.spec.commands = frame.spec.commands || {};
     frame.spec.name = name;
 
     try{
