@@ -138,7 +138,7 @@ function getHelp(spec: CLICommand): string{
         r += '\n';
     }
 
-    if(spec.commands)
+    if(typeof spec.commands == 'object' && Object.keys(spec.commands).length > 0)
         r += getCommandsHelp(spec);
 
     return r;
